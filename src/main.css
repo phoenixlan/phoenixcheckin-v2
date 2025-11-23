@@ -1,0 +1,20 @@
+:root {
+	font-family: Roboto, sans-serif;
+
+	--spacing-none: 0rem;
+	--spacing-xxxs: 0.10rem;
+	--spacing-xxs: 0.25rem;
+	--spacing-xs: 0.5rem;
+	--spacing-s: 0.75rem;
+	--spacing-m: 1.0rem;
+	--spacing-l: 1.5rem;
+	--spacing-xl: 2rem;
+	--spacing-xxl: 2.5rem;
+	--spacing-xxxl: 3rem;
+}
+
+body, #root {
+	margin: 0;
+	width: 100vw;
+	min-height: 100vh;
+}
