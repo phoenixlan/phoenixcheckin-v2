@@ -35,8 +35,10 @@ export const AuthProvider = (props: PropsWithChildren) => {
     }
     /// Login function
     const login = () => {
-        const baseUrl = import.meta.env.VITE_APP_URL ?? "http://checkin.dev.phoenixlan.no:3000";
-        const clientId = import.meta.env.VITE_API_OAUTH_CLIENT_ID ?? "phoenix-checkin-dev";
+        if (!import.meta.env.VITE_APP_URL) throw Error("VITE_APP_URL not defined")
+        if (!import.meta.env.VITE_API_OAUTH_CLIENT_ID) throw Error("VITE_API_OAUTH_CLIENT_ID not defined")
+        const baseUrl = import.meta.env.VITE_APP_URL;
+        const clientId = import.meta.env.VITE_API_OAUTH_CLIENT_ID;
 
         const authenticationUrl = User.getAuthenticationUrl(baseUrl, clientId);
 

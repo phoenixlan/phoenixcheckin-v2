@@ -12,7 +12,8 @@ import { faAddressCard, faCalendar, faUser } from "@fortawesome/free-regular-svg
 import { faMapPin, faQrcode, faSignOut, faVenus } from "@fortawesome/free-solid-svg-icons"
 
 export default function App() {
-	Phoenix.init(import.meta.env.VITE_API_URL ?? "http://api.dev.phoenixlan.no:3000")
+	if (!import.meta.env.VITE_API_URL) throw Error("VITE_API_URL not defined")
+	Phoenix.init(import.meta.env.VITE_API_URL)
 
 	const Auth = useAuth()!
 
@@ -48,7 +49,6 @@ export default function App() {
 	}, [inputValue])
 
 	const fetchTicket = async () => {
-		console.log("fetch")
 		if (Math.sign(ticketId) === -1) return // No negative numbers
 		let ticketResult
 		try {

@@ -5,9 +5,9 @@ interface ViteTypeOptions {
 }
 
 interface ImportMetaEnv {
-	readonly VITE_APP_URL: string
-	readonly VITE_API_URL: string
-	readonly VITE_API_OAUTH_CLIENT_ID: string
+	readonly VITE_APP_URL: string|undefined
+	readonly VITE_API_URL: string|undefined
+	readonly VITE_API_OAUTH_CLIENT_ID: string|undefined
 }
 
 interface ImportMeta {
