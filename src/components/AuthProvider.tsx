@@ -35,10 +35,11 @@ export const AuthProvider = (props: PropsWithChildren) => {
     }
     /// Login function
     const login = () => {
-        if (!import.meta.env.VITE_APP_URL) throw Error("VITE_APP_URL not defined")
-        if (!import.meta.env.VITE_API_OAUTH_CLIENT_ID) throw Error("VITE_API_OAUTH_CLIENT_ID not defined")
         const baseUrl = import.meta.env.VITE_APP_URL;
         const clientId = import.meta.env.VITE_API_OAUTH_CLIENT_ID;
+
+        if (!baseUrl) throw Error("VITE_APP_URL not defined")
+        if (!clientId) throw Error("VITE_API_OAUTH_CLIENT_ID not defined")
 
         const authenticationUrl = User.getAuthenticationUrl(baseUrl, clientId);
 
