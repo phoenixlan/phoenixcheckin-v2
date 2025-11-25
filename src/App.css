@@ -1,3 +1,20 @@
+main.login {
+	align-items: center;
+	
+	& img {
+		max-width: 80%;
+	}
+	
+	& button {
+		background-color: rgb(255, 75, 157);
+		color: white;
+		font-size: 1rem;
+		padding: var(--spacing-s);
+		border: none;
+		min-width: 10rem;
+	}
+}
+
 main {
 	display: flex;
 	flex-direction: column;

@@ -1,10 +1,8 @@
 import { AuthContext } from "../hooks/useAuth";
 import { useEffect, useState, type PropsWithChildren } from "react";
-import { jwtDecode } from "jwt-decode";
 import { User } from "@phoenixlan/phoenix.js";
 
 import type { FullUser } from "@phoenixlan/phoenix.js/build/user";
-import type { JWTPayload } from "@phoenixlan/phoenix.js/build/user/oauth";
 
 export const AuthProvider = (props: PropsWithChildren) => {
     /// States
@@ -70,18 +68,20 @@ export const AuthProvider = (props: PropsWithChildren) => {
                         /// Get token, refreshToken and set user based on token & refreshToken.
                         await User.Oauth.authenticateByCode(code);
                         
-                        const Token = await User.Oauth.getToken();
-                        setAuthUser(await User.getAuthenticatedUser());
+                        // const Token = await User.Oauth.getToken();
                         //let RefreshToken = await User.Oauth.getRefreshToken();
-
+                        
                         /// Store user information in the local storage for later use.
                         /*
                         window.localStorage.setItem("auth", JSON.stringify({
                             token: Token,
                             refreshToken: RefreshToken,
-                        }));
+                            }));
                         */
-                        setRoles(jwtDecode<JWTPayload>(Token).roles);
+
+                        setAuthUser(await User.getAuthenticatedUser());
+                        const tokenPayload = await User.Oauth.getTokenPayload()
+                        setRoles(tokenPayload.roles);
                         setLoadingFinished(true);
                     } 
                     catch (e) {
@@ -110,7 +110,8 @@ export const AuthProvider = (props: PropsWithChildren) => {
                         const authenticatedUser = await User.getAuthenticatedUser();                        
                         setAuthUser(authenticatedUser);
 
-                        setRoles(jwtDecode<JWTPayload>(object.token).roles);
+                        const tokenPayload = await User.Oauth.getTokenPayload()
+                        setRoles(tokenPayload.roles);
                         setLoadingFinished(true);
                     }
                     catch (e) {

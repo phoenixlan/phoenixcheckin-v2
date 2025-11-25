@@ -9,7 +9,7 @@ import type { IDetectedBarcode } from '@yudiel/react-qr-scanner'
 import type { ChangeEvent } from 'react'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faAddressCard, faCalendar, faUser } from "@fortawesome/free-regular-svg-icons"
-import { faMapPin, faQrcode, faSignOut, faVenus } from "@fortawesome/free-solid-svg-icons"
+import { faMapPin, faMars, faQrcode, faSignOut, faVenus } from "@fortawesome/free-solid-svg-icons"
 
 export default function App() {
 	if (!import.meta.env.VITE_API_URL) throw Error("VITE_API_URL not defined")
@@ -107,6 +107,20 @@ export default function App() {
 			toast.success("Sjekket inn billet: " + ticketId)
 		}
 	}
+
+	function calculateAge(dateString: string) {
+		const today = new Date()
+		const birthDate = new Date(dateString)
+
+		let age = today.getFullYear() - birthDate.getFullYear();
+    	const month = today.getMonth() - birthDate.getMonth();
+
+		if (month < 0 || (month === 0 && today.getDate() < birthDate.getDate())) {
+			age--;
+		}
+
+		return age
+	}
 	
 	const validRoles = ["ticket_checkin", "ticket_admin", "admin"]
 
@@ -146,17 +160,17 @@ export default function App() {
 					</div>
 				</div>
 				<div>
-					<FontAwesomeIcon icon={faVenus}/>
+					<FontAwesomeIcon icon={ticketOwner.gender === "Gender.male" ? faMars : faVenus}/>
 					<div>
 						<small>Kjønn</small>
-						<span>{ticketOwner.gender === "Gender.male" ? "Gutt" : "Jente"}</span>{/* TODO */}
+						<span>{ticketOwner.gender === "Gender.male" ? "Gutt" : "Jente"}</span>
 					</div>
 				</div>
 				<div>
 					<FontAwesomeIcon icon={faCalendar}/>
 					<div>
 						<small>Alder</small>
-						<span>{ticketOwner.birthdate} (x år)</span>{/* TODO */}
+						<span>{ticketOwner.birthdate} ({calculateAge(ticketOwner.birthdate)} år)</span>
 					</div>
 				</div>
 				<div>
