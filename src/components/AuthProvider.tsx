@@ -3,8 +3,11 @@ import { useEffect, useState, type PropsWithChildren } from "react";
 import { User } from "@phoenixlan/phoenix.js";
 
 import type { FullUser } from "@phoenixlan/phoenix.js/build/user";
+import toast from "react-hot-toast";
 
 export const AuthProvider = (props: PropsWithChildren) => {
+    const validRoles = ["ticket_checkin", "ticket_admin", "admin"]
+
     /// States
     const [errorMessage, setErrorMessage]               = useState<string>("");
     const [shouldDisplayError, setShouldDisplayError]   = useState(false);
@@ -16,7 +19,6 @@ export const AuthProvider = (props: PropsWithChildren) => {
 
     /// User Management
     const [authUser, setAuthUser] = useState<FullUser|null>(null);
-    const [roles, setRoles] = useState<Array<string>>([]);
 
     /// Set an error message and show the error container (E)
     function setError(text: string) {
@@ -31,6 +33,7 @@ export const AuthProvider = (props: PropsWithChildren) => {
         setAuthUser(null);
         window.localStorage.removeItem("auth");
     }
+
     /// Login function
     const login = () => {
         const baseUrl = import.meta.env.VITE_APP_URL;
@@ -53,8 +56,15 @@ export const AuthProvider = (props: PropsWithChildren) => {
             }));
         })
 
+        /// Check if user is authorized to access the application 
+        const checkAuthorization = async () => {
+            const tokenPayload = await User.Oauth.getTokenPayload()
+            const isAuthorized = validRoles.some(validRole => tokenPayload.roles.includes(validRole))
+            return isAuthorized
+        }
+
         /// Check if the user is already authenticated or is requesting to be authenticated.
-        const checkAuth = async () => {
+        const checkAuthState = async () => {
             setLoadingFinished(false);
             /// Create storage variable with information from local storage.
             const storage = window.localStorage.getItem("auth");
@@ -67,21 +77,24 @@ export const AuthProvider = (props: PropsWithChildren) => {
                     try {
                         /// Get token, refreshToken and set user based on token & refreshToken.
                         await User.Oauth.authenticateByCode(code);
-                        
-                        // const Token = await User.Oauth.getToken();
-                        //let RefreshToken = await User.Oauth.getRefreshToken();
+
+                        if (!(await checkAuthorization())) {
+                            window.localStorage.removeItem("auth")
+                            toast.error('You are not authorized to check in tickets')
+                            console.error("User is not authorized to perform required actions on this page. Does the user have the correct permissions?")
+                            return
+                        }
+                                                
+                        const Token = await User.Oauth.getToken();
+                        const RefreshToken = await User.Oauth.getRefreshToken();
                         
                         /// Store user information in the local storage for later use.
-                        /*
                         window.localStorage.setItem("auth", JSON.stringify({
                             token: Token,
                             refreshToken: RefreshToken,
-                            }));
-                        */
+                        }));
 
                         setAuthUser(await User.getAuthenticatedUser());
-                        const tokenPayload = await User.Oauth.getTokenPayload()
-                        setRoles(tokenPayload.roles);
                         setLoadingFinished(true);
                     } 
                     catch (e) {
@@ -106,12 +119,17 @@ export const AuthProvider = (props: PropsWithChildren) => {
                     try {
                         await User.Oauth.setAuthState(object.token, object.refreshToken);
 
+                        if (!(await checkAuthorization())) {
+                            window.localStorage.removeItem("auth")
+                            toast.error('You are not authorized to check in tickets')
+                            console.error("User is not authorized to perform required actions on this page. Does the user have the correct permissions?")
+                            return
+                        }
+
                         // If we are already logged in as someone, only update if the user uuid is updated.
-                        const authenticatedUser = await User.getAuthenticatedUser();                        
+                        const authenticatedUser = await User.getAuthenticatedUser();
                         setAuthUser(authenticatedUser);
 
-                        const tokenPayload = await User.Oauth.getTokenPayload()
-                        setRoles(tokenPayload.roles);
                         setLoadingFinished(true);
                     }
                     catch (e) {
@@ -142,14 +160,14 @@ export const AuthProvider = (props: PropsWithChildren) => {
                 setLoadingFinished(false);
                 setAuthUser(null);
             }
-            checkAuth();
+            checkAuthState();
         };
 
-        checkAuth();
-    }, [code, setRoles]);
+        checkAuthState();
+    }, [code]);
 
     return(<>
-        <AuthContext.Provider value={{authUser, logout, roles, shouldDisplayError, errorMessage, loadingFinished, login}}>
+        <AuthContext.Provider value={{authUser, logout, shouldDisplayError, errorMessage, loadingFinished, login}}>
             {props.children}
         </AuthContext.Provider>
     </>);

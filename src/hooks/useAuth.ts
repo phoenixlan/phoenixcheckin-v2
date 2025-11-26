@@ -3,7 +3,6 @@ import { createContext, useContext } from "react";
 
 type AuthContextType = {
   authUser: FullUser | null;
-  roles: Array<string>;
   login: VoidFunction;
   logout: VoidFunction;
   loadingFinished: boolean;

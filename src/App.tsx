@@ -122,9 +122,7 @@ export default function App() {
 		return age
 	}
 	
-	const validRoles = ["ticket_checkin", "ticket_admin", "admin"]
-
-	if(!Auth.authUser || !validRoles.some(value => Auth.roles.includes(value))) {
+	if(!Auth.authUser) {
 		return <Login/>
 	}
 	
@@ -138,6 +136,9 @@ export default function App() {
 			<span className="event-name">{currentEvent?.name}</span>
 			<button onClick={() => Auth.logout()}><FontAwesomeIcon icon={faSignOut} size="xl"/></button>
 		</nav>
+		<section className="completionbar">{/* TODO */}
+			<progress value="70" max="100"></progress>
+		</section>
 		<div className="inputgroup">
 			<input type="number" inputMode='numeric' id="ticketid" placeholder='#ID' value={inputValue} onChange={handleOnSearchChange} />
 			<button onClick={handleShowScanner}><FontAwesomeIcon icon={faQrcode} size="2x" /></button>
@@ -204,10 +205,6 @@ export default function App() {
 		</>}
 		<section>
 			<QrScanner show={showQrScanner} handleOnScan={handleOnScan}/>
-		</section>
-		<section className="completionbar">{/* TODO */}
-			<h3>Fremgang</h3>
-			<progress value="70" max="100"></progress>
 		</section>
 	</main>
 	)
