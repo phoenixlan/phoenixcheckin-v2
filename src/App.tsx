@@ -8,8 +8,9 @@ import './App.css'
 import type { IDetectedBarcode } from '@yudiel/react-qr-scanner'
 import type { ChangeEvent } from 'react'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faAddressCard, faCalendar, faUser } from "@fortawesome/free-regular-svg-icons"
-import { faMapPin, faMars, faQrcode, faSignOut, faVenus } from "@fortawesome/free-solid-svg-icons"
+import { faAddressCard, faCalendar } from "@fortawesome/free-regular-svg-icons"
+import { faHashtag, faMars, faQrcode, faSignOut, faVenus } from "@fortawesome/free-solid-svg-icons"
+import { QRCodeSVG } from "qrcode.react"
 
 export default function App() {
 	if (!import.meta.env.VITE_API_URL) throw Error("VITE_API_URL not defined")
@@ -20,16 +21,16 @@ export default function App() {
 	const [showQrScanner, setShowQrScanner] = useState<boolean>(false)
 	const [inputValue, setInputValue] = useState<string>("")
 	const [ticketId, setTicketId] = useState<number>(-1)
-	const [currentEvent, setCurrentEvent] = useState<Phoenix.Event|undefined>()
+	const [currentEvent, setCurrentEvent] = useState<Phoenix.Event|null>()
 	const [ticket, setTicket] = useState<Phoenix.Ticket.FullTicket|undefined>()
 	const [ticketOwner, setTicketOwner] = useState<Phoenix.User.FullUser|undefined>()
+	const [ticketCount, setTicketCount] = useState<{ checkedIn:number, total:number; }>({checkedIn: 0, total: 0})
 
 	useEffect(() => { // On auth change
 		const loadPageData = async () => {
-			if(Auth.authUser) {
-				const currentEventResult = await Phoenix.getCurrentEvent()
-				setCurrentEvent(currentEventResult)
-			}
+			if(!Auth.authUser) return
+			const currentEventResult = await Phoenix.getCurrentEvent()
+			setCurrentEvent(currentEventResult)
 		}
 		loadPageData()
 	}, [Auth.authUser])
@@ -67,9 +68,17 @@ export default function App() {
 		setInputValue("")
 	}
 
+	const fetchTicketCount = async () => {
+		if (!currentEvent) return
+		const allTickets = await Phoenix.getEventTickets(currentEvent.uuid)
+		const checkedInTickets = allTickets.filter(ticket => ticket.checked_in)
+		setTicketCount({checkedIn: checkedInTickets.length, total: allTickets.length})
+	}
+
 	useEffect(() => { // On ticketId change
 		const loadTicket = async () => {
 			await fetchTicket()
+			await fetchTicketCount()
 		}
 		loadTicket()
 	// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -100,10 +109,21 @@ export default function App() {
 	}
 
 	async function handleCheckinTicket() {
-
 		if (!ticket?.checked_in && confirm(`Er du sikker på at du vil sjekke inn billet #${ticketId}?`)) {
-			await Phoenix.Ticket.checkInTicket(ticketId)
+			try {
+				await Phoenix.Ticket.checkInTicket(ticketId)
+			} catch (error) {
+				if (error instanceof Phoenix.ApiPostError) {
+					console.error(error)
+					toast.error(error.message)
+					return
+				}
+				console.error(error)
+			}
+			
 			await fetchTicket()
+			await fetchTicketCount()
+
 			toast.success("Sjekket inn billet: " + ticketId)
 		}
 	}
@@ -126,38 +146,38 @@ export default function App() {
 		return <Login/>
 	}
 	
-	return (
-	<main>
+	return (<>
 		<nav className="navbar">
 			<div>
 				<img src="/phoenix_logo.svg" alt="" className="logo"/>
 				<span>Innsjekk</span>
 			</div>
 			<span className="event-name">{currentEvent?.name}</span>
-			<button onClick={() => Auth.logout()}><FontAwesomeIcon icon={faSignOut} size="xl"/></button>
+			<button onClick={() => Auth.logout()}><FontAwesomeIcon icon={faSignOut} size="xl"/><br/>Logg ut</button>
 		</nav>
-		<section className="completionbar">{/* TODO */}
-			<progress value="70" max="100"></progress>
+	<main>
+		<section className="completionbar">
+			<progress max={ticketCount.total} value={ticketCount.checkedIn}></progress>
 		</section>
 		<div className="inputgroup">
-			<input type="number" inputMode='numeric' id="ticketid" placeholder='#ID' value={inputValue} onChange={handleOnSearchChange} />
-			<button onClick={handleShowScanner}><FontAwesomeIcon icon={faQrcode} size="2x" /></button>
+			<input type="number" inputMode='numeric' id="ticketid" placeholder='#ID' value={inputValue} onChange={handleOnSearchChange} title="Søk etter billett #ID"/>
+			<button onClick={handleShowScanner} title="Scan billett"><FontAwesomeIcon icon={faQrcode} size="2x" /></button>
 		</div>
 		{!ticket || !ticketOwner ? <></> : <>
 			<h3>Personalia</h3>
 			<section className="personalia">
 				<div>
-					<FontAwesomeIcon icon={faUser}/>
+					<FontAwesomeIcon icon={faHashtag}/>
 					<div>
-						<small>Fornavn, Etternavn</small>
-						<span>{Phoenix.User.getFullName(ticketOwner)}</span>
+						<small>Brukernavn</small>
+						<span>{ticketOwner.username}</span>
 					</div>
 				</div>
 				<div>
 					<FontAwesomeIcon icon={faAddressCard}/>
 					<div>
-						<small>Brukernavn</small>
-						<span>{ticketOwner.username}</span>
+						<small>Fornavn, Etternavn</small>
+						<span>{Phoenix.User.getFullName(ticketOwner)}</span>
 					</div>
 				</div>
 				<div>
@@ -174,31 +194,21 @@ export default function App() {
 						<span>{ticketOwner.birthdate} ({calculateAge(ticketOwner.birthdate)} år)</span>
 					</div>
 				</div>
-				<div>
-					<FontAwesomeIcon icon={faMapPin}/>
-					<div>
-						<small>Adresse</small>
-						<span>{ticketOwner.address}</span>
-					</div>
-				</div>
 			</section>
 			<h3>Billett</h3>
 			<div className="ticket">
 				<div className="left">
 					<div className="inner innerleft">
-						<span>{ticket.event.name}</span>
-						<span>#{ticket.ticket_id}</span>
-
-						<span>{ticket.owner.firstname}</span>
-						<span>{ticket.owner.lastname}</span>
-						<span>{ticket.owner.username}</span>
+						<span className="eventname">{ticket.event.name}</span>
+						<span>{Phoenix.User.getFullName(ticket.owner)}</span>
+						<span>Rad {ticket.seat?.row.row_number} Sete {ticket.seat?.number}</span>
 					</div>
 				</div>
 				<div className={`right ${ticket.checked_in && 'checked-in'}`} onClick={handleCheckinTicket}>
 					<div className="inner innerright">
 						<img src="/phoenix_logo.svg" alt="" className="logo"/>
-						<span>#{ticketId}</span>
-						<FontAwesomeIcon icon={faQrcode} size="xl"/>
+						<b># {ticketId}</b>
+						<QRCodeSVG value={`phoenix-lan-ticket:${ticket.ticket_id}`} size={60} />
 					</div>
 				</div>
 			</div>
@@ -207,5 +217,5 @@ export default function App() {
 			<QrScanner show={showQrScanner} handleOnScan={handleOnScan}/>
 		</section>
 	</main>
-	)
+	</>)
 }

@@ -5,8 +5,9 @@ import { User } from "@phoenixlan/phoenix.js";
 import type { FullUser } from "@phoenixlan/phoenix.js/build/user";
 import toast from "react-hot-toast";
 
+const validRoles = ["ticket_checkin", "ticket_admin", "admin"]
+
 export const AuthProvider = (props: PropsWithChildren) => {
-    const validRoles = ["ticket_checkin", "ticket_admin", "admin"]
 
     /// States
     const [errorMessage, setErrorMessage]               = useState<string>("");
