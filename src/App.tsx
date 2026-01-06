@@ -1,10 +1,10 @@
+import './App.css'
 import * as Phoenix from "@phoenixlan/phoenix.js"
 import { useEffect, useState } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { QrScanner } from './components/QrScanner'
 import toast from 'react-hot-toast'
 import Login from "./components/Login"
-import './App.css'
 import type { IDetectedBarcode } from '@yudiel/react-qr-scanner'
 import type { ChangeEvent } from 'react'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
@@ -26,16 +26,18 @@ export default function App() {
 	const [ticketOwner, setTicketOwner] = useState<Phoenix.User.FullUser|undefined>()
 	const [ticketCount, setTicketCount] = useState<{ checkedIn:number, total:number; }>({checkedIn: 0, total: 0})
 
-	useEffect(() => { // On auth change
+	// On page load
+	useEffect(() => {
 		const loadPageData = async () => {
-			if(!Auth.authUser) return
 			const currentEventResult = await Phoenix.getCurrentEvent()
 			setCurrentEvent(currentEventResult)
+			await fetchTicketCount()
 		}
 		loadPageData()
-	}, [Auth.authUser])
+	}, [])
 
-	useEffect(() => { // On inputValue change
+	// On inputValue change
+	useEffect(() => {
 		const debounceInputHandler = setTimeout(() => {
 			const id = Number.parseInt(inputValue)
 			if (Number.isNaN(id)) {
@@ -75,7 +77,8 @@ export default function App() {
 		setTicketCount({checkedIn: checkedInTickets.length, total: allTickets.length})
 	}
 
-	useEffect(() => { // On ticketId change
+	// On ticketId change
+	useEffect(() => {
 		const loadTicket = async () => {
 			await fetchTicket()
 			await fetchTicketCount()
@@ -133,7 +136,7 @@ export default function App() {
 		const birthDate = new Date(dateString)
 
 		let age = today.getFullYear() - birthDate.getFullYear();
-    	const month = today.getMonth() - birthDate.getMonth();
+		const month = today.getMonth() - birthDate.getMonth();
 
 		if (month < 0 || (month === 0 && today.getDate() < birthDate.getDate())) {
 			age--;
@@ -147,24 +150,30 @@ export default function App() {
 	}
 	
 	return (<>
-		<nav className="navbar">
-			<div>
-				<img src="/phoenix_logo.svg" alt="" className="logo"/>
-				<span>Innsjekk</span>
-			</div>
-			<span className="event-name">{currentEvent?.name}</span>
-			<button onClick={() => Auth.logout()}><FontAwesomeIcon icon={faSignOut} size="xl"/><br/>Logg ut</button>
-		</nav>
+	<nav className="navbar">
+		<div>
+			<img src="/phoenix_logo.svg" alt="" className="logo"/>
+			<span>Innsjekk</span>
+		</div>
+		<span className="event-name">{currentEvent?.name}</span>
+		<button onClick={() => Auth.logout()}><FontAwesomeIcon icon={faSignOut} size="xl"/><br/>Logg ut</button>
+	</nav>
 	<main>
-		<section className="completionbar">
+		<section className="completion">
 			<progress max={ticketCount.total} value={ticketCount.checkedIn}></progress>
 		</section>
 		<div className="inputgroup">
-			<input type="number" inputMode='numeric' id="ticketid" placeholder='#ID' value={inputValue} onChange={handleOnSearchChange} title="Søk etter billett #ID"/>
-			<button onClick={handleShowScanner} title="Scan billett"><FontAwesomeIcon icon={faQrcode} size="2x" /></button>
+			<div className='textinput'>
+				<label htmlFor="ticketid">Billet ID</label>
+				<input type="number" inputMode='numeric' id="ticketid" placeholder='#ID' min="1" value={inputValue} onChange={handleOnSearchChange} title="Søk etter billett #ID"/>
+			</div>
+			<div>
+				<label htmlFor='scanbutton'>Scan</label>
+				<button id='scanbutton' onClick={handleShowScanner} title="Scan billett"><FontAwesomeIcon icon={faQrcode} size="2x"/></button>
+			</div>
 		</div>
 		{!ticket || !ticketOwner ? <></> : <>
-			<h3>Personalia</h3>
+			<h2 className='heading'>Personalia</h2>
 			<section className="personalia">
 				<div>
 					<FontAwesomeIcon icon={faHashtag}/>
@@ -195,7 +204,7 @@ export default function App() {
 					</div>
 				</div>
 			</section>
-			<h3>Billett</h3>
+			<h2 className='heading'>Billett</h2>
 			<div className="ticket">
 				<div className="left">
 					<div className="inner innerleft">
@@ -204,7 +213,7 @@ export default function App() {
 						<span>Rad {ticket.seat?.row.row_number} Sete {ticket.seat?.number}</span>
 					</div>
 				</div>
-				<div className={`right ${ticket.checked_in && 'checked-in'}`} onClick={handleCheckinTicket}>
+				<div className={`right ${ticket.checked_in ? "checked-in" : ""}`} onClick={handleCheckinTicket}>
 					<div className="inner innerright">
 						<img src="/phoenix_logo.svg" alt="" className="logo"/>
 						<b># {ticketId}</b>
@@ -213,9 +222,7 @@ export default function App() {
 				</div>
 			</div>
 		</>}
-		<section>
-			<QrScanner show={showQrScanner} handleOnScan={handleOnScan}/>
-		</section>
+		<QrScanner show={showQrScanner} handleOnScan={handleOnScan}/>
 	</main>
 	</>)
 }

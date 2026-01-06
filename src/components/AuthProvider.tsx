@@ -8,7 +8,6 @@ import toast from "react-hot-toast";
 const validRoles = ["ticket_checkin", "ticket_admin", "admin"]
 
 export const AuthProvider = (props: PropsWithChildren) => {
-
     /// States
     const [errorMessage, setErrorMessage]               = useState<string>("");
     const [shouldDisplayError, setShouldDisplayError]   = useState(false);

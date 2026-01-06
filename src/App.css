@@ -21,6 +21,8 @@ main {
 	display: flex;
 	flex-direction: column;
 	min-height: 100%;
+	flex: 1;
+	gap: var(--spacing-s);
 }
 
 img.logo {
@@ -56,19 +58,33 @@ nav.navbar {
 
 div.inputgroup {
 	width: 100%;
-	margin: 1rem 0 1rem 0;
 	display: flex;
-	gap: .25rem;
+	gap: var(--spacing-xxs);
+
+	& div.textinput {
+		flex: 1;
+		width: 100%;
+	}
+
+	& > div {
+		display: flex;
+		flex-direction: column;
+	}
+
+	& label {
+		font-size: .6rem;
+	}
 
 	& input {
 		flex: 1;
 		padding: 1rem 1rem;
-		border: .1rem solid black;
+		border: unset;
+		outline: unset;
+		border-bottom: .15rem solid gray;
 	}
 	
 	& input:focus {
-		outline-color: #f773b0;
-		border-radius: 0;
+		border-color: #ffaad2;
 	}
 
 	& button {
@@ -80,7 +96,7 @@ div.inputgroup {
 		border: none;
 		padding: .5rem;
 		background-color: #ffaad2;
-		border-bottom: .2rem solid #f773b0;
+		border-bottom: .15rem solid #f773b0;
 		border-right: .15rem solid #f773b0;
 
 		& img {
@@ -90,17 +106,22 @@ div.inputgroup {
 	}
 }
 
+main .heading {
+	margin: unset
+}
+
 section.personalia {
 	display: flex;
 	flex-direction: column;
 	gap: var(--spacing-m);
 
-	& div {
+	& > div {
 		display: flex;
-		gap: var(--spacing-xs);
+		gap: var(--spacing-s);
 		padding: 0 var(--spacing-xs) 0 var(--spacing-xs);
+		align-items: center;
 
-		& div {
+		& > div {
 			display: flex;
 			flex-direction: column;
 
@@ -126,9 +147,11 @@ div.ticket {
 		height: 10em;
 		width: 5em;
 		position: relative;
+		cursor: pointer;
 
 		&.checked-in {
 			transform: translateY(1em) rotate(15deg) translateY(-1em) translateX(2em);
+			cursor: default;
 		}
 	}
 	
@@ -162,12 +185,12 @@ div.ticket {
 }
 
 div.qr-container {
-	max-height: 100%;
+	flex: 1;
+	display: flex;
+	align-items: center;
 }
 
-section.completionbar {
-	margin-top: var(--spacing-m);
-
+section.completion {
 	& progress {
 		width: 100%;
 		height: var(--spacing-m);
