@@ -5,9 +5,19 @@ import { User } from "@phoenixlan/phoenix.js";
 import type { FullUser } from "@phoenixlan/phoenix.js/build/user";
 import toast from "react-hot-toast";
 
+export type AuthContextProps = {
+  authUser: FullUser | null;
+  login: VoidFunction;
+  logout: VoidFunction;
+  loadingFinished: boolean;
+  shouldDisplayError: boolean;
+  errorMessage: string;
+  get isLoggedIn(): boolean;
+}
+
 const validRoles = ["ticket_checkin", "ticket_admin", "admin"]
 
-export const AuthProvider = (props: PropsWithChildren) => {
+export default function AuthContextProvider (props: PropsWithChildren) {
     /// States
     const [errorMessage, setErrorMessage]               = useState<string>("");
     const [shouldDisplayError, setShouldDisplayError]   = useState(false);
@@ -166,8 +176,20 @@ export const AuthProvider = (props: PropsWithChildren) => {
         checkAuthState();
     }, [code]);
 
+    const AuthContextProps: AuthContextProps = {
+        authUser,
+        logout,
+        shouldDisplayError,
+        errorMessage,
+        loadingFinished,
+        login,
+        get isLoggedIn() {
+            return authUser !== null
+        }
+    }
+
     return(<>
-        <AuthContext.Provider value={{authUser, logout, shouldDisplayError, errorMessage, loadingFinished, login}}>
+        <AuthContext.Provider value={AuthContextProps}>
             {props.children}
         </AuthContext.Provider>
     </>);

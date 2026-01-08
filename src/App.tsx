@@ -1,23 +1,18 @@
 import './App.css'
 import * as Phoenix from "@phoenixlan/phoenix.js"
 import { useEffect, useState } from 'react'
-import { useAuth } from './hooks/useAuth'
 import { QrScanner } from './components/QrScanner'
 import toast from 'react-hot-toast'
-import Login from "./components/Login"
 import type { IDetectedBarcode } from '@yudiel/react-qr-scanner'
 import type { ChangeEvent } from 'react'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faAddressCard, faCalendar } from "@fortawesome/free-regular-svg-icons"
 import { faHashtag, faMars, faQrcode, faSignOut, faVenus } from "@fortawesome/free-solid-svg-icons"
 import { QRCodeSVG } from "qrcode.react"
+import { useAuth } from './hooks/useAuth'
 
 export default function App() {
-	if (!import.meta.env.VITE_API_URL) throw Error("VITE_API_URL not defined")
-	Phoenix.init(import.meta.env.VITE_API_URL)
-
 	const Auth = useAuth()!
-
 	const [showQrScanner, setShowQrScanner] = useState<boolean>(false)
 	const [inputValue, setInputValue] = useState<string>("")
 	const [ticketId, setTicketId] = useState<number>(-1)
@@ -143,10 +138,6 @@ export default function App() {
 		}
 
 		return age
-	}
-	
-	if(!Auth.authUser) {
-		return <Login/>
 	}
 	
 	return (<>
