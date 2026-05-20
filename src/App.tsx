@@ -7,7 +7,7 @@ import type { IDetectedBarcode } from '@yudiel/react-qr-scanner'
 import type { ChangeEvent } from 'react'
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faAddressCard, faCalendar } from "@fortawesome/free-regular-svg-icons"
-import { faHashtag, faMars, faQrcode, faSignOut, faVenus } from "@fortawesome/free-solid-svg-icons"
+import { faCheck, faHashtag, faMars, faQrcode, faSignOut, faVenus } from "@fortawesome/free-solid-svg-icons"
 import { QRCodeSVG } from "qrcode.react"
 import { useAuth } from './hooks/useAuth'
 
@@ -15,7 +15,7 @@ export default function App() {
 	const Auth = useAuth()!
 	const [showQrScanner, setShowQrScanner] = useState<boolean>(false)
 	const [inputValue, setInputValue] = useState<string>("")
-	const [ticketId, setTicketId] = useState<number>(-1)
+	const [ticketAuth, setTicketAuth] = useState<{id: number, totp: string|null}>({id: -1, totp: null})
 	const [currentEvent, setCurrentEvent] = useState<Phoenix.Event|null>()
 	const [ticket, setTicket] = useState<Phoenix.Ticket.FullTicket|undefined>()
 	const [ticketOwner, setTicketOwner] = useState<Phoenix.User.FullUser|undefined>()
@@ -38,7 +38,7 @@ export default function App() {
 			if (Number.isNaN(id)) {
 				return
 			}
-			setTicketId(id)
+			setTicketAuth(prev => ({...prev, id}))
 		}, 500)
 
 		return () => {
@@ -47,13 +47,13 @@ export default function App() {
 	}, [inputValue])
 
 	const fetchTicket = async () => {
-		if (Math.sign(ticketId) === -1) return // No negative numbers
+		if (Math.sign(ticketAuth.id) === -1) return // No negative numbers
 		let ticketResult
 		try {
-			ticketResult = await Phoenix.Ticket.getTicket(ticketId)
+			ticketResult = await Phoenix.Ticket.getTicket(ticketAuth.id, ticketAuth.totp??undefined)
 		} catch (error) {
 			console.log(error)
-			toast.error("Unable to find ticket with id: " + ticketId)
+			toast.error("Unable to find ticket with id: " + ticketAuth.id)
 			setTicket(undefined)
 			return
 		}
@@ -80,25 +80,51 @@ export default function App() {
 		}
 		loadTicket()
 	// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [ticketId])
+	}, [ticketAuth.id])
 
 	function handleOnSearchChange(event: ChangeEvent) {
 		setShowQrScanner(false)
 		const inputElement = event.target as HTMLInputElement
 		setInputValue(inputElement.value)
+		setTicketAuth(prev => ({...prev, totp: null}))
 	}
 	
 	function handleOnScan(results: IDetectedBarcode[]) {
 		const scanResult = results[0]
-		const scannedValue = scanResult.rawValue.split(":") // This should be in the format of 'phoenix-lan-ticket:999'
-		const id = Number.parseInt(scannedValue[1])
-		if (scanResult.format !== "qr_code" || scannedValue[0] !== "phoenix-lan-ticket" || Number.isNaN(id)) {
+		// QR code values are obfuscated a bit to deter script kiddies
+		if (scanResult.format !== "qr_code"){
+			toast.error("Not a valid QR-code")
+			return
+		}
+
+		try {
+			const decoded_contents = atob(scanResult.rawValue)
+			console.log(`decoded ticket: ${decoded_contents}`)
+			const content_parts = decoded_contents.split(":")
+
+			if(content_parts[0] != "phoenix-ticket") {
+				// Magic identifyer
+				console.log(`Invalid magic ${content_parts[0]}`)
+				toast.error("Not a valid ticket QR-code")
+				return
+			}
+			const ticket_id = Number.parseInt(content_parts[1])
+			if (Number.isNaN(ticket_id)) {
+				console.log(`Invalid ticket id ${ticket_id}`)
+				toast.error("Not a valid ticket QR-code")
+				return
+			}
+
+			const totp = content_parts[2]
+
+			setTicketAuth({id: ticket_id, totp})
+
+			setInputValue(ticket_id.toString())
+			setShowQrScanner(false)
+		} catch (e) {
 			toast.error("Not a valid ticket QR-code")
 			return
 		}
-		setTicketId(id)
-		setInputValue(id.toString())
-		setShowQrScanner(false)
 	}
 
 	function handleShowScanner() {
@@ -107,9 +133,9 @@ export default function App() {
 	}
 
 	async function handleCheckinTicket() {
-		if (!ticket?.checked_in && confirm(`Er du sikker på at du vil sjekke inn billet #${ticketId}?`)) {
+		if (!ticket?.checked_in && confirm(`Er du sikker på at du vil sjekke inn billet #${ticketAuth.id}?`)) {
 			try {
-				await Phoenix.Ticket.checkInTicket(ticketId)
+				await Phoenix.Ticket.checkInTicket(ticketAuth.id, ticketAuth.totp??undefined)
 			} catch (error) {
 				if (error instanceof Phoenix.ApiPostError) {
 					console.error(error)
@@ -118,11 +144,11 @@ export default function App() {
 				}
 				console.error(error)
 			}
-			
+
 			await fetchTicket()
 			await fetchTicketCount()
 
-			toast.success("Sjekket inn billet: " + ticketId)
+			toast.success("Sjekket inn billet: " + ticketAuth.id)
 		}
 	}
 
@@ -202,12 +228,13 @@ export default function App() {
 						<span className="eventname">{ticket.event.name}</span>
 						<span>{Phoenix.User.getFullName(ticket.owner)}</span>
 						<span>Rad {ticket.seat?.row.row_number} Sete {ticket.seat?.number}</span>
+						{ticketAuth.totp ? <span>Verifisert mot forfalskning <FontAwesomeIcon icon={faCheck}/></span> : null}
 					</div>
 				</div>
 				<div className={`right ${ticket.checked_in ? "checked-in" : ""}`} onClick={handleCheckinTicket}>
 					<div className="inner innerright">
 						<img src="/phoenix_logo.svg" alt="" className="logo"/>
-						<b># {ticketId}</b>
+						<b># {ticketAuth.id}</b>
 						<QRCodeSVG value={`phoenix-lan-ticket:${ticket.ticket_id}`} size={60} />
 					</div>
 				</div>
