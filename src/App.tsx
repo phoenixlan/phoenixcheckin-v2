@@ -10,9 +10,12 @@ import { faAddressCard, faCalendar } from "@fortawesome/free-regular-svg-icons"
 import { faCheck, faHashtag, faMars, faQrcode, faSignOut, faVenus } from "@fortawesome/free-solid-svg-icons"
 import { QRCodeSVG } from "qrcode.react"
 import { useAuth } from './hooks/useAuth'
+import { useSiteConfig } from './queries/useSiteConfig'
 
 export default function App() {
 	const Auth = useAuth()!
+	const { data: siteConfig } = useSiteConfig()
+	const logoUrl = siteConfig?.logo ? `${import.meta.env.VITE_API_URL}/${siteConfig.logo}` : null
 	const [showQrScanner, setShowQrScanner] = useState<boolean>(false)
 	const [inputValue, setInputValue] = useState<string>("")
 	const [ticketAuth, setTicketAuth] = useState<{id: number, totp: string|null}>({id: -1, totp: null})
@@ -169,7 +172,7 @@ export default function App() {
 	return (<>
 	<nav className="navbar">
 		<div>
-			<img src="/phoenix_logo.svg" alt="" className="logo"/>
+			{logoUrl ? <img src={logoUrl} alt="" className="logo"/> : <div className="spinner" />}
 			<span>Innsjekk</span>
 		</div>
 		<span className="event-name">{currentEvent?.name}</span>
@@ -233,8 +236,8 @@ export default function App() {
 				</div>
 				<div className={`right ${ticket.checked_in ? "checked-in" : ""}`} onClick={handleCheckinTicket}>
 					<div className="inner innerright">
-						<img src="/phoenix_logo.svg" alt="" className="logo"/>
-						<b># {ticketAuth.id}</b>
+					{logoUrl ? <img src={logoUrl} alt="" className="logo"/> : <div className="spinner" />}
+					<b># {ticketAuth.id}</b>
 						<QRCodeSVG value={`phoenix-lan-ticket:${ticket.ticket_id}`} size={60} />
 					</div>
 				</div>
