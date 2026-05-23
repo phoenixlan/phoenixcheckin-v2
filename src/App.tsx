@@ -228,10 +228,18 @@ export default function App() {
 			<div className="ticket">
 				<div className="left">
 					<div className="inner innerleft">
-						<span className="eventname">{ticket.event.name}</span>
+						<span className="eventname">{ticket.event.name} - {ticket.ticket_type.name}</span>
 						<span>{Phoenix.User.getFullName(ticket.owner)}</span>
-						<span>Rad {ticket.seat?.row.row_number} Sete {ticket.seat?.number}</span>
-						{ticketAuth.totp ? <span>Verifisert mot forfalskning <FontAwesomeIcon icon={faCheck}/></span> : null}
+						{
+							ticket.ticket_type.seatable ? (
+								ticket.seat ? (
+									<span>Rad {ticket.seat?.row.row_number} Sete {ticket.seat?.number}</span>
+								) : (<span><b>Ikke plassert enda</b></span>)
+							) : (
+								<span>Ingen seteplass</span>
+							)
+						}
+						{ticketAuth.totp ? <span>Ikke forfalsket <FontAwesomeIcon icon={faCheck}/></span> : null}
 					</div>
 				</div>
 				<div className={`right ${ticket.checked_in ? "checked-in" : ""}`} onClick={handleCheckinTicket}>
